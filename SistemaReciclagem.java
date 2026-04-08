@@ -37,10 +37,9 @@ public class SistemaReciclagem {
     private static final String GREEN  = "\u001B[32m";
     private static final String CYAN   = "\u001B[36m";
     private static final String YELLOW = "\u001B[33m";
-    private static final String RED    = "\u001B[31m";
     private static final String DIM    = "\u001B[2m";
 
-    public static void main(String[] args ){
+    static void main(String[] args ){
         // Inicializa todos os totais com zero
         IMPACTO.keySet().forEach(m -> totais.put(m, 0.0));
         exibirBanner();
