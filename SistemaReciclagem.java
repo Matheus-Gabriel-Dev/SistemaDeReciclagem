@@ -98,8 +98,8 @@ public class SistemaReciclagem {
         String hora = LocalDateTime.now()
                 .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
         historico.add(new String[]{hora, material, df.format(quantidade), df.format(valorEstimado)});
-        System.out.println("\n "+ GREEN + " OK " + df.format(quantidade)+ "kg de "+ material+ "registrados com sucesso: "+ RESET);
-        System.out.println(" "+ DIM+ " Valor estimado: R$ "+ df.format(valorEstimado)+ RESET);
+        System.out.println("\n "+ GREEN + " OK " + df.format(quantidade)+ "kg de "+ material + " registrados com sucesso: "+ RESET);
+        System.out.println(" "+ DIM + " Valor estimado: R$ "+ df.format(valorEstimado)+ RESET);
         pausar();
     }
     private static void exibirTotais(){
@@ -125,7 +125,7 @@ public class SistemaReciclagem {
         }
 
         linha();
-        System.out.printf("   %-10s %s%-12s R$ %-9s%s%n", BOLD + GREEN, df.format(somaGeralKg), df.format(somaGeralReais), RESET);
+        System.out.printf(" %-10s %-12s R$ %-9s %s%n", BOLD + GREEN, df.format(somaGeralKg), df.format(somaGeralReais), RESET);
         pausar();
 
     }
@@ -141,7 +141,7 @@ public class SistemaReciclagem {
             agua += e.getValue() * f[1];
             energia += e.getValue() * f[2];
         }
-        System.out.printf(" %s CO2 evitado   :%s  %%s kg%s%n", GREEN, RESET, BOLD, df.format(co2), RESET);
+        System.out.printf(" %s CO2 evitado   :%s  %s%s kg%s%n", GREEN, RESET, BOLD, df.format(co2), RESET);
         System.out.printf("  %s Água poupada  :%s %s%s litros%s%n", CYAN, RESET, BOLD, df.format(agua), RESET);
         System.out.printf("  %s⚡ Energia       :%s %s%s kWh%s%n", YELLOW, RESET, BOLD, df.format(energia), RESET);
 
