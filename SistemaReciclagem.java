@@ -13,14 +13,14 @@ public class SistemaReciclagem {
 
     // ─── Valores de mercado por kg em Reais (R$) ──────────────────────────────
     private static final Map<String, Double> VALOR_MERCADO = new LinkedHashMap<>();
+
+    public boolean rodando;
     
     // ─── Carrega os dados do banco de dados ─────────────────────────────────────
     private static void MateriaisBanco(){
         try (Connection conn = conect.conectar();
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery("SELECT material, co2_kg, agua_l, energia_kwh, valor_kg FROM materiais")) {
-            IMPACTO.clear();
-            VALOR_MERCADO.clear();
 
             while (rs.next()) {
                 String material = rs.getString("material");
@@ -52,7 +52,12 @@ public class SistemaReciclagem {
     private static final String YELLOW = "\u001B[33m";
     private static final String DIM    = "\u001B[2m";
 
-    static void main(String[] args ){
+    public static void main(String[] args ){
+        //carrega os materiais do banco de dados
+        MateriaisBanco();
+        
+
+
         // Inicializa todos os totais com zero
         IMPACTO.keySet().forEach(m -> totais.put(m, 0.0));
         exibirBanner();
@@ -156,7 +161,7 @@ public class SistemaReciclagem {
         }
         System.out.printf(" %s CO2 evitado   :%s  %s%s kg%s%n", GREEN, RESET, BOLD, df.format(co2), RESET);
         System.out.printf("  %s Água poupada  :%s %s%s litros%s%n", CYAN, RESET, BOLD, df.format(agua), RESET);
-        System.out.printf("  %s⚡ Energia       :%s %s%s kWh%s%n", YELLOW, RESET, BOLD, df.format(energia), RESET);
+        System.out.printf("  %s Energia       :%s %s%s kWh%s%n", YELLOW, RESET, BOLD, df.format(energia), RESET);
 
         //equivalencia didatica
         System.out.println();
