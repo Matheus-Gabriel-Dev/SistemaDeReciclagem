@@ -1,29 +1,42 @@
 import java.util.*;
+import java.sql.*;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import db.conect;
 
 
 public class SistemaReciclagem {
+
     // ─── Fatores de impacto por kg: [CO2 (kg), Água (L), Energia (kWh)] ───────
     private static final Map<String, double[]> IMPACTO = new LinkedHashMap<>();
 
     // ─── Valores de mercado por kg em Reais (R$) ──────────────────────────────
     private static final Map<String, Double> VALOR_MERCADO = new LinkedHashMap<>();
+    
+    // ─── Carrega os dados do banco de dados ─────────────────────────────────────
+    private static void MateriaisBanco(){
+        try (Connection conn = conect.conectar();
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT material, co2_kg, agua_l, energia_kwh, valor_kg FROM materiais")) {
+            IMPACTO.clear();
+            VALOR_MERCADO.clear();
 
-    static{
-        //Impactos Ambientais
-        IMPACTO.put("Papel", new double[]{1.5, 500.0, 4.0});
-        IMPACTO.put("Plastico", new double[]{3.0, 180, 6.0});
-        IMPACTO.put("Vidro", new double[]{1.0,  20, 1.5});
-        IMPACTO.put("Metal", new double[]{9.0, 1000, 15.0});
+            while (rs.next()) {
+                String material = rs.getString("material");
+                double co2 = rs.getDouble("co2_kg");
+                double agua = rs.getDouble("agua_l");
+                double energia = rs.getDouble("energia_kwh");
+                double valor = rs.getDouble("valor_kg");
 
-    // Valores em R$/kg fornecidos
-        VALOR_MERCADO.put("Papel",    0.81);
-        VALOR_MERCADO.put("Plastico", 1.73);
-        VALOR_MERCADO.put("Vidro",    0.21);
-        VALOR_MERCADO.put("Metal",    4.77);
+                IMPACTO.put(material, new double[]{co2, agua, energia});
+                VALOR_MERCADO.put(material, valor);
+            }
+        } catch (SQLException e) {
+            System.out.println("Erro ao carregar materiais do banco: " + e.getMessage());
+        }
     }
+
 
     // ─── Estado do sistema ────────────────────────────────────────────────────
     private static final Map<String, Double>totais = new LinkedHashMap<>();
