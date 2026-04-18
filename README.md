@@ -1,2 +1,5 @@
 #meu-projeto
 
+#se o codigo não funcionar direito por causa do banco de dados use esses comando no terminal
+
+#javac -encoding utf-8 -cp ".;lib/mysql-connector-j-9.6.0.jar" db/conect.java SistemaReciclagem.java
