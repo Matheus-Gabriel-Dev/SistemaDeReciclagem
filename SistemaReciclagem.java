@@ -1,8 +1,6 @@
 import java.util.*;
 import java.sql.*;
 import java.text.DecimalFormat;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import db.conect;
 
 
@@ -14,10 +12,17 @@ public class SistemaReciclagem {
     // ─── Valores de mercado por kg em Reais (R$) ──────────────────────────────
     private static final Map<String, Double> VALOR_MERCADO = new LinkedHashMap<>();
 
-    public boolean rodando;
+    // ─── Estado do sistema ────────────────────────────────────────────────────
+    private static final Map<String, Double> totaisMateriais = new LinkedHashMap<>();
+private static final Map<String, Double> totaisImpacto = new LinkedHashMap<>();
+    private static final List<String[]>     historico = new ArrayList<>();
+    private static final DecimalFormat      df = new DecimalFormat("#,##0.00");
+    private static final Scanner            scanner = new Scanner(System.in);
     
-    // ─── Carrega os dados do banco de dados ─────────────────────────────────────
+    // ─── Carrega os Matérias do banco de dados ─────────────────────────────────────
     private static void MateriaisBanco(){
+        IMPACTO.clear();
+        VALOR_MERCADO.clear();
         try (Connection conn = conect.conectar();
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery("SELECT material, co2_kg, agua_l, energia_kwh, valor_kg FROM materiais")) {
@@ -37,12 +42,106 @@ public class SistemaReciclagem {
         }
     }
 
+    // ───Historico de registros ───────────────────────────────────────────────────
+    private static void HistoricoBanco(){
+        historico.clear();
+        try (Connection conn = conect.conectar();
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT \r\n" + //
+                                "    h.data_hora AS DATA,\r\n" + //
+                                "    m.material,\r\n" + //
+                                "    h.Qnt_Kg AS quantidade_kg,\r\n" + //
+                                "    h.Qnt_Kg * h.Valor_Kg AS valor_estimado\r\n" + //
+                                "FROM historico h\r\n" + //
+                                "JOIN materiais m \r\n" + //
+                                "    ON h.ID_Mat = m.ID_Mat\r\n" + //
+                                "ORDER BY h.data_hora DESC;")) {
 
-    // ─── Estado do sistema ────────────────────────────────────────────────────
-    private static final Map<String, Double>totais = new LinkedHashMap<>();
-    private static final List<String[]>     historico = new ArrayList<>();
-    private static final DecimalFormat      df = new DecimalFormat("#,##0.00");
-    private static final Scanner            scanner = new Scanner(System.in);
+            while (rs.next()) {
+                String dataHora = rs.getString("DATA");
+                String material = rs.getString("material");
+                String quantidade = df.format(rs.getDouble("quantidade_kg"));
+                String valorEstimado = df.format(rs.getDouble("valor_estimado"));
+
+                historico.add(new String[]{dataHora, material, quantidade, valorEstimado});
+            }
+        } catch (SQLException e) {
+            System.out.println("Erro ao carregar histórico do banco: " + e.getMessage());
+        }
+    }
+
+     // ───Salvar registro no histórico do banco de dados ───────────────────────────────────
+    private static void SalvarHistoricoBanco(int material, double quantidade){
+        String sql = "INSERT INTO historico (\r\n" + //
+                        "    ID_Mat,\r\n" + //
+                        "    Qnt_Kg,\r\n" + //
+                        "    Valor_Kg,\r\n" + //
+                        "    co2_kg,\r\n" + //
+                        "    agua_l,\r\n" + //
+                        "    energia_kwh\r\n" + //
+                        ")\r\n" + //
+                        "SELECT \r\n" + //
+                        "    m.ID_Mat,\r\n" + //
+                        "    ?, -- quantidade que você quer registrar\r\n" + //
+                        "    m.valor_kg,\r\n" + //
+                        "    m.co2_kg,\r\n" + //
+                        "    m.agua_l,\r\n" + //
+                        "    m.energia_kwh\r\n" + //
+                        "FROM materiais m\r\n" + //
+                        "WHERE m.ID_Mat = ?;";
+        try (Connection conn = conect.conectar();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setDouble(1, quantidade);
+            pstmt.setInt(2, material);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Erro ao salvar histórico no banco: " + e.getMessage());
+        }
+    }
+
+    //───consultar o impacto ambiental total do banco de dados ───────────────────────────────────
+    private static void ImpactoBanco(){
+        totaisImpacto.clear();
+        String sql = "SELECT \r\n" + //
+                    "    SUM(Qnt_Kg * co2_kg) AS total_co2,\r\n" + //
+                    "    SUM(Qnt_Kg * agua_l) AS total_agua,\r\n" + //
+                    "    SUM(Qnt_Kg * energia_kwh) AS total_energia\r\n" + //
+                    "FROM historico";
+        try (Connection conn = conect.conectar();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            if (rs.next()) {
+                double co2 = rs.getDouble("total_co2");
+                double agua = rs.getDouble("total_agua");
+                double energia = rs.getDouble("total_energia");
+
+                totaisImpacto.put("total_co2", co2);
+                totaisImpacto.put("total_agua", agua);
+                totaisImpacto.put("total_energia", energia);
+            }
+        } catch (SQLException e) {
+            System.out.println("Erro ao consultar impacto ambiental do banco: " + e.getMessage());
+        }
+    }
+
+    private static void exibirTotaisBanco(){
+        totaisMateriais.clear();
+        String sql = "SELECT m.material, SUM(h.Qnt_Kg) AS total_kg\r\n" + //
+                    "FROM historico h\r\n" + //
+                    "JOIN materiais m ON h.ID_Mat = m.ID_Mat\r\n" + //
+                    "GROUP BY m.material";
+        try (Connection conn = conect.conectar();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                String material = rs.getString("material");
+                double totalKg = rs.getDouble("total_kg");
+                totaisMateriais.put(material, totalKg);
+            }
+        } catch (SQLException e) {
+            System.out.println("Erro ao consultar totais do banco: " + e.getMessage());
+        }
+    }
 
     // ─── Formatação do terminal ───────────────────────────────────────────────
     private static final String RESET  = "\u001B[0m";
@@ -53,17 +152,15 @@ public class SistemaReciclagem {
     private static final String DIM    = "\u001B[2m";
 
     public static void main(String[] args ){
-        //carrega os materiais do banco de dados
-        MateriaisBanco();
-        
 
 
         // Inicializa todos os totais com zero
-        IMPACTO.keySet().forEach(m -> totais.put(m, 0.0));
+
         exibirBanner();
 
         boolean rodando = true;
         while (rodando){
+            MateriaisBanco(); //atualiza os materiais e seus fatores de impacto/valor do banco de dados
             exibirMenu();
             int opcao = lerOpcao();
 
@@ -85,6 +182,7 @@ public class SistemaReciclagem {
     //  FUNCIONALIDADES
 
     private static void registrarMaterial(){
+
         System.out.println("\n"+ BOLD+ CYAN+"------REGISTRAR MATERIAL-----"+ RESET);
 
         //lista os materiais disponiveis
@@ -101,8 +199,6 @@ public class SistemaReciclagem {
             System.out.println(YELLOW+ " NUMERO INVALIDO."+RESET);
             return;
         }
-        String material = materiais[escolha - 1];
-
         //quantidade
         System.out.print("Quantidade em Kg:");
         double quantidade = lerDouble();
@@ -110,17 +206,13 @@ public class SistemaReciclagem {
             System.out.println(YELLOW+"Quantidade deve ser maior que zero." + RESET);
             return;
         }
-        totais.merge(material, quantidade, Double::sum);
+        
 
-        double valorEstimado = quantidade * VALOR_MERCADO.get(material);
-        String hora = LocalDateTime.now()
-                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
-        historico.add(new String[]{hora, material, df.format(quantidade), df.format(valorEstimado)});
-        System.out.println("\n "+ GREEN + " OK " + df.format(quantidade)+ "kg de "+ material + " registrados com sucesso: "+ RESET);
-        System.out.println(" "+ DIM + " Valor estimado: R$ "+ df.format(valorEstimado)+ RESET);
-        pausar();
+        SalvarHistoricoBanco(escolha, quantidade);
     }
+
     private static void exibirTotais(){
+        exibirTotaisBanco(); //atualiza os totais de cada material com os dados do banco de dados
         System.out.println("\n" + BOLD + CYAN + "---Total Reciclado e Valor Estimado---"+ RESET);
 
         double somaGeralKg = 0;
@@ -129,7 +221,7 @@ public class SistemaReciclagem {
         System.out.printf(" %-10s %-12s %-12s %-12s%n ", "Material", "Qtd(kg)", "Valor(R$)", "Progresso");
         linha();
 
-        for(Map.Entry<String, Double> e : totais.entrySet()){
+        for(Map.Entry<String, Double> e :   totaisMateriais.entrySet()){
             String material = e.getKey();
             double qtd = e.getValue();
             double valor = qtd * VALOR_MERCADO.get(material);
@@ -151,14 +243,11 @@ public class SistemaReciclagem {
     private static void exibirImpactoAmbiental(){
         System.out.println("\n"+ BOLD + CYAN + " ---Impacto Ambiental Estimado---"+ RESET);
         System.out.println(DIM+ "(baseado na quantidade total registrada)\n"+ RESET);
+        ImpactoBanco(); //atualiza os totais de impacto ambiental com os dados do banco de dados
 
-        double co2 = 0, agua = 0, energia = 0;
-        for (Map.Entry<String, Double> e : totais.entrySet()){
-            double[] f = IMPACTO.get(e.getKey());
-            co2 += e.getValue() * f[0];
-            agua += e.getValue() * f[1];
-            energia += e.getValue() * f[2];
-        }
+        double co2 = totaisImpacto.getOrDefault("total_co2", 0.0);
+        double agua = totaisImpacto.getOrDefault("total_agua", 0.0);
+        double energia = totaisImpacto.getOrDefault("total_energia", 0.0);
         System.out.printf(" %s CO2 evitado   :%s  %s%s kg%s%n", GREEN, RESET, BOLD, df.format(co2), RESET);
         System.out.printf("  %s Água poupada  :%s %s%s litros%s%n", CYAN, RESET, BOLD, df.format(agua), RESET);
         System.out.printf("  %s Energia       :%s %s%s kWh%s%n", YELLOW, RESET, BOLD, df.format(energia), RESET);
@@ -174,6 +263,7 @@ public class SistemaReciclagem {
     }
 
     private static void exibirHistorico(){
+        HistoricoBanco(); //carrega o histórico do banco de dados para a lista local
         System.out.println("\n" + BOLD + CYAN + "---Histórico de Registros---" + RESET);
 
         if(historico.isEmpty()){
@@ -242,7 +332,7 @@ public class SistemaReciclagem {
     }
 
     private static double maiorTotal() {
-        return totais.values().stream().mapToDouble(Double::doubleValue).max().orElse(0);
+        return totaisMateriais.values().stream().mapToDouble(Double::doubleValue).max().orElse(0);
     }
 
     private static void linha() {
