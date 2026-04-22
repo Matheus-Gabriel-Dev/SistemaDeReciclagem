@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS `historico` (
   PRIMARY KEY (`ID_His`) USING BTREE,
   KEY `FK_Hístorico_materiais` (`ID_Mat`) USING BTREE,
   CONSTRAINT `FK_Hístorico_materiais` FOREIGN KEY (`ID_Mat`) REFERENCES `materiais` (`ID_Mat`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Exportação de dados foi desmarcado.
 
