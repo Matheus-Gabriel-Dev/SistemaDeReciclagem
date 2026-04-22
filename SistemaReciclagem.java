@@ -1,7 +1,7 @@
-import java.util.*;
+import db.conect;
 import java.sql.*;
 import java.text.DecimalFormat;
-import db.conect;
+import java.util.*;
 
 
 public class SistemaReciclagem {
@@ -72,23 +72,25 @@ private static final Map<String, Double> totaisImpacto = new LinkedHashMap<>();
 
      // ───Salvar registro no histórico do banco de dados ───────────────────────────────────
     private static void SalvarHistoricoBanco(int material, double quantidade){
-        String sql = "INSERT INTO historico (\r\n" + //
-                        "    ID_Mat,\r\n" + //
-                        "    Qnt_Kg,\r\n" + //
-                        "    Valor_Kg,\r\n" + //
-                        "    co2_kg,\r\n" + //
-                        "    agua_l,\r\n" + //
-                        "    energia_kwh\r\n" + //
-                        ")\r\n" + //
-                        "SELECT \r\n" + //
-                        "    m.ID_Mat,\r\n" + //
-                        "    ?, -- quantidade que você quer registrar\r\n" + //
-                        "    m.valor_kg,\r\n" + //
-                        "    m.co2_kg,\r\n" + //
-                        "    m.agua_l,\r\n" + //
-                        "    m.energia_kwh\r\n" + //
-                        "FROM materiais m\r\n" + //
-                        "WHERE m.ID_Mat = ?;";
+        String sql = """
+                     INSERT INTO historico (\r
+                         ID_Mat,\r
+                         Qnt_Kg,\r
+                         Valor_Kg,\r
+                         co2_kg,\r
+                         agua_l,\r
+                         energia_kwh\r
+                     )\r
+                     SELECT \r
+                         m.ID_Mat,\r
+                         ?, -- quantidade que voc\u00ea quer registrar\r
+                         m.valor_kg,\r
+                         m.co2_kg,\r
+                         m.agua_l,\r
+                         m.energia_kwh\r
+                     FROM materiais m\r
+                     WHERE m.ID_Mat = ?;""" //
+        ;
         try (Connection conn = conect.conectar();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setDouble(1, quantidade);
@@ -102,11 +104,13 @@ private static final Map<String, Double> totaisImpacto = new LinkedHashMap<>();
     //───consultar o impacto ambiental total do banco de dados ───────────────────────────────────
     private static void ImpactoBanco(){
         totaisImpacto.clear();
-        String sql = "SELECT \r\n" + //
-                    "    SUM(Qnt_Kg * co2_kg) AS total_co2,\r\n" + //
-                    "    SUM(Qnt_Kg * agua_l) AS total_agua,\r\n" + //
-                    "    SUM(Qnt_Kg * energia_kwh) AS total_energia\r\n" + //
-                    "FROM historico";
+        String sql = """
+                     SELECT \r
+                         SUM(Qnt_Kg * co2_kg) AS total_co2,\r
+                         SUM(Qnt_Kg * agua_l) AS total_agua,\r
+                         SUM(Qnt_Kg * energia_kwh) AS total_energia\r
+                     FROM historico""" //
+        ;
         try (Connection conn = conect.conectar();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
@@ -126,10 +130,12 @@ private static final Map<String, Double> totaisImpacto = new LinkedHashMap<>();
 
     private static void exibirTotaisBanco(){
         totaisMateriais.clear();
-        String sql = "SELECT m.material, SUM(h.Qnt_Kg) AS total_kg\r\n" + //
-                    "FROM historico h\r\n" + //
-                    "JOIN materiais m ON h.ID_Mat = m.ID_Mat\r\n" + //
-                    "GROUP BY m.material";
+        String sql = """
+                     SELECT m.material, SUM(h.Qnt_Kg) AS total_kg\r
+                     FROM historico h\r
+                     JOIN materiais m ON h.ID_Mat = m.ID_Mat\r
+                     GROUP BY m.material""" //
+        ;
         try (Connection conn = conect.conectar();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
@@ -209,6 +215,7 @@ private static final Map<String, Double> totaisImpacto = new LinkedHashMap<>();
         
 
         SalvarHistoricoBanco(escolha, quantidade);
+        System.out.println(escolha + quantidade);
     }
 
     private static void exibirTotais(){

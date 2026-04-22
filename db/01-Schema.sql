@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS `historico_preco` (
   PRIMARY KEY (`ID_HisPre`),
   KEY `FK_Historico_preco_materiais` (`ID_Mat`),
   CONSTRAINT `FK_Historico_preco_materiais` FOREIGN KEY (`ID_Mat`) REFERENCES `materiais` (`ID_Mat`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Exportação de dados foi desmarcado.
 
@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS `materiais` (
   `energia_kwh` double NOT NULL,
   `valor_kg` double NOT NULL,
   PRIMARY KEY (`ID_Mat`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT= 1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Exportação de dados foi desmarcado.
 
