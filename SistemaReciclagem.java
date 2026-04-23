@@ -172,6 +172,7 @@ private static final Map<String, Double> totaisImpacto = new LinkedHashMap<>();
 
         boolean rodando = true;
         while (rodando){
+
             MateriaisBanco(); //atualiza os materiais e seus fatores de impacto/valor do banco de dados
             exibirMenu();
             int opcao = lerOpcao();
@@ -335,7 +336,7 @@ private static final Map<String, Double> totaisImpacto = new LinkedHashMap<>();
         System.out.println("Companhia de Reciclagem");
         System.out.println(RESET);
     }
-    private static void exibirMenu(){
+    private static void exibirMenu(){ 
         System.out.println("\n" + BOLD + "  Menu Principal" + RESET);
         System.out.println(DIM + "---------------------------------" + RESET);
         System.out.println("  [1] Registrar material reciclado");
@@ -364,6 +365,17 @@ private static final Map<String, Double> totaisImpacto = new LinkedHashMap<>();
     private static void pausar() {
         System.out.print("\n" + DIM + "  Pressione Enter para continuar..." + RESET);
         scanner.nextLine();
+    }
+
+    private static void limparConsole() {
+        try {
+            new ProcessBuilder("cmd", "/c", "cls")
+                .inheritIO()
+                .start()
+                .waitFor();
+        } catch (Exception e) {
+            System.out.println("Não foi possível limpar o console.");
+        }
     }
 }
 
