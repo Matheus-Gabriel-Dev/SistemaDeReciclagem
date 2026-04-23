@@ -14,6 +14,7 @@ public class SistemaReciclagem {
 
     // ─── Estado do sistema ────────────────────────────────────────────────────
     private static final Map<String, Double> totaisMateriais = new LinkedHashMap<>();
+    private static final Map<String,Integer> IDMATERIAL = new LinkedHashMap<>();
 private static final Map<String, Double> totaisImpacto = new LinkedHashMap<>();
     private static final List<String[]>     historico = new ArrayList<>();
     private static final DecimalFormat      df = new DecimalFormat("#,##0.00");
@@ -25,9 +26,10 @@ private static final Map<String, Double> totaisImpacto = new LinkedHashMap<>();
         VALOR_MERCADO.clear();
         try (Connection conn = conect.conectar();
             Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT material, co2_kg, agua_l, energia_kwh, valor_kg FROM materiais")) {
+            ResultSet rs = stmt.executeQuery("SELECT ID_Mat, material, co2_kg, agua_l, energia_kwh, valor_kg FROM materiais")) {
 
             while (rs.next()) {
+                Integer id_mat = rs.getInt("ID_Mat");
                 String material = rs.getString("material");
                 double co2 = rs.getDouble("co2_kg");
                 double agua = rs.getDouble("agua_l");
@@ -36,6 +38,7 @@ private static final Map<String, Double> totaisImpacto = new LinkedHashMap<>();
 
                 IMPACTO.put(material, new double[]{co2, agua, energia});
                 VALOR_MERCADO.put(material, valor);
+                IDMATERIAL.put(material,id_mat);
             }
         } catch (SQLException e) {
             System.out.println("Erro ao carregar materiais do banco: " + e.getMessage());
@@ -47,15 +50,18 @@ private static final Map<String, Double> totaisImpacto = new LinkedHashMap<>();
         historico.clear();
         try (Connection conn = conect.conectar();
             Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT \r\n" + //
-                                "    h.data_hora AS DATA,\r\n" + //
-                                "    m.material,\r\n" + //
-                                "    h.Qnt_Kg AS quantidade_kg,\r\n" + //
-                                "    h.Qnt_Kg * h.Valor_Kg AS valor_estimado\r\n" + //
-                                "FROM historico h\r\n" + //
-                                "JOIN materiais m \r\n" + //
-                                "    ON h.ID_Mat = m.ID_Mat\r\n" + //
-                                "ORDER BY h.data_hora DESC;")) {
+            ResultSet rs = stmt.executeQuery("""
+                                             SELECT \r
+                                                 h.data_hora AS DATA,\r
+                                                 m.material,\r
+                                                 h.Qnt_Kg AS quantidade_kg,\r
+                                                 h.Qnt_Kg * h.Valor_Kg AS valor_estimado\r
+                                             FROM historico h\r
+                                             JOIN materiais m \r
+                                                 ON h.ID_Mat = m.ID_Mat\r
+                                             ORDER BY h.data_hora DESC;""" //
+
+        )) {
 
             while (rs.next()) {
                 String dataHora = rs.getString("DATA");
@@ -192,7 +198,7 @@ private static final Map<String, Double> totaisImpacto = new LinkedHashMap<>();
         System.out.println("\n"+ BOLD+ CYAN+"------REGISTRAR MATERIAL-----"+ RESET);
 
         //lista os materiais disponiveis
-        String[] materiais = IMPACTO.keySet().toArray(new String[0]);
+        String[] materiais = IDMATERIAL.keySet().toArray(new String[0]);
         for(int i = 0; i < materiais.length; i++){
             System.out.printf("  %s[%d]%s %-10s %s(R$ %s/kg)%s%n",
                     GREEN, i + 1, RESET, materiais[i],DIM, df.format(VALOR_MERCADO.get(materiais[i])), RESET);
@@ -212,10 +218,8 @@ private static final Map<String, Double> totaisImpacto = new LinkedHashMap<>();
             System.out.println(YELLOW+"Quantidade deve ser maior que zero." + RESET);
             return;
         }
-        
-
-        SalvarHistoricoBanco(escolha, quantidade);
-        System.out.println(escolha + quantidade);
+        System.out.println(IDMATERIAL.get(materiais[escolha - 1]));
+        SalvarHistoricoBanco(IDMATERIAL.get(materiais[escolha - 1]), quantidade);
     }
 
     private static void exibirTotais(){
