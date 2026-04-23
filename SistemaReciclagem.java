@@ -195,10 +195,14 @@ private static final Map<String, Double> totaisImpacto = new LinkedHashMap<>();
 
     private static void registrarMaterial(){
 
-        System.out.println("\n"+ BOLD+ CYAN+"------REGISTRAR MATERIAL-----"+ RESET);
-
-        //lista os materiais disponiveis
+        boolean rep = true, rep2 =true;
         String[] materiais = IDMATERIAL.keySet().toArray(new String[0]);
+        double quantidade;
+        int escolha;
+
+        //faz um loop para escolha correta do material
+        do{
+        System.out.println("\n"+ BOLD+ CYAN+"------REGISTRAR MATERIAL-----"+ RESET);
         for(int i = 0; i < materiais.length; i++){
             System.out.printf("  %s[%d]%s %-10s %s(R$ %s/kg)%s%n",
                     GREEN, i + 1, RESET, materiais[i],DIM, df.format(VALOR_MERCADO.get(materiais[i])), RESET);
@@ -206,20 +210,27 @@ private static final Map<String, Double> totaisImpacto = new LinkedHashMap<>();
 
         //escolha do material
         System.out.print("\n Material (1- "+ materiais.length+"): ");
-        int escolha = lerOpcao();
+        escolha = lerOpcao();
         if (escolha < 1 || escolha > materiais.length){
             System.out.println(YELLOW+ " NUMERO INVALIDO."+RESET);
-            return;
+            continue;
         }
-        //quantidade
+        rep = false;
+    }while(rep);
+
+    // faz um loop para leitura correta de quantidade
+        do{
         System.out.print("Quantidade em Kg:");
-        double quantidade = lerDouble();
+         quantidade = lerDouble();
         if (quantidade <= 0){
             System.out.println(YELLOW+"Quantidade deve ser maior que zero." + RESET);
-            return;
+            continue;
         }
-        System.out.println(IDMATERIAL.get(materiais[escolha - 1]));
+        rep2 = false;
+    }while(rep2);
+
         SalvarHistoricoBanco(IDMATERIAL.get(materiais[escolha - 1]), quantidade);
+        
     }
 
     private static void exibirTotais(){
