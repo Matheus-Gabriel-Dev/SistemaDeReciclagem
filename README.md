@@ -4,7 +4,5 @@
 #javac -encoding utf-8 -cp ".;lib/mysql-connector-j-9.6.0.jar" db/conect.java SistemaReciclagem.java
 
 
-#antes de rodar o projeto, baixe o docker e rode o arquivo docker-composer.yml]
+#antes de rodar o projeto, baixe o docker e rode o arquivo docker-composer.yml
 
-
-#corrigir o erro de o material o valor de 1 a 5 e nâo o valor do id do material
